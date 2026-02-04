@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Honeypot Console</title>
+    <link rel="stylesheet" href="/static/styles.css?v=2" />
+  </head>
+  <body>
+    <div class="ambient" aria-hidden="true"></div>
+    <div class="page">
+      <header class="hero">
+        <div class="hero-left">
+          <div class="pill">Agentic Honeypot</div>
+          <h1>Scam Detection &amp; Intelligence Studio</h1>
+          <p>
+            A clean, focused workspace for detecting scam intent, engaging the
+            sender, and extracting actionable intel in real time.
+          </p>
+          <div class="hero-actions">
+            <button id="startBtn" class="btn primary">Start New Session</button>
+            <button id="healthBtn" class="btn ghost">Check Health</button>
+          </div>
+        </div>
+        <div class="hero-card">
+          <h2>Persona</h2>
+          <div id="persona" class="persona">Start a session to load persona.</div>
+          <div class="persona-meta">
+            <span id="sessionId">Session: —</span>
+            <span id="status">Status: Idle</span>
+          </div>
+          <div class="summary">
+            <div class="summary-item">
+              <span class="label">Messages</span>
+              <span id="msgCount" class="value">0</span>
+            </div>
+            <div class="summary-item">
+              <span class="label">Links Found</span>
+              <span id="linkCount" class="value">0</span>
+            </div>
+            <div class="summary-item">
+              <span class="label">UPI/Bank IDs</span>
+              <span id="idCount" class="value">0</span>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main class="layout">
+        <section class="panel">
+          <div class="panel-header">
+            <h3>Conversation</h3>
+            <div class="panel-actions">
+              <button id="clearBtn" class="btn ghost">Clear</button>
+            </div>
+          </div>
+          <div id="chat" class="chat"></div>
+          <div id="typing" class="typing hidden">
+            <span></span><span></span><span></span>
+            <div>Agent is analyzing...</div>
+          </div>
+          <form id="messageForm" class="input-row">
+            <input
+              id="messageInput"
+              type="text"
+              placeholder="Paste scammer message here"
+              autocomplete="off"
+            />
+            <button class="btn primary" type="submit">Send</button>
+          </form>
+        </section>
+
+        <section class="panel">
+          <div class="panel-header">
+            <h3>Intel Extraction</h3>
+            <div class="panel-actions">
+              <button id="exportBtn" class="btn ghost">Export Session</button>
+              <button id="copyIntelBtn" class="btn ghost">Copy Intel</button>
+            </div>
+          </div>
+          <div class="intel">
+            <div class="intel-card">
+              <div class="label">Scam Detected</div>
+              <div id="detected" class="value">—</div>
+            </div>
+            <div class="intel-card">
+              <div class="label">Risk Score</div>
+              <div id="score" class="value">—</div>
+              <div class="meter">
+                <div id="confidenceFill" class="meter-fill"></div>
+              </div>
+              <div id="confidenceLabel" class="meter-label">Confidence: —</div>
+            </div>
+            <div class="intel-card wide">
+              <div class="label">Extracted Intel</div>
+              <pre id="extracted" class="code">{}</pre>
+            </div>
+          </div>
+          <div class="panel-header">
+            <h3>Last Agent Reply</h3>
+          </div>
+          <div id="agentReply" class="reply">—</div>
+        </section>
+      </main>
+    </div>
+
+    <script src="/static/app.js?v=2"></script>
+  </body>
+</html>
