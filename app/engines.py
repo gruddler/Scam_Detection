@@ -1,7 +1,7 @@
 import re
-from pathlib import Path
 from typing import Dict, List, Tuple
 from .schemas import ExtractedIntel, Persona
+from .config import BASE_DIR
 
 SCAM_KEYWORDS = {
     "otp",
@@ -67,7 +67,6 @@ BANK_RE = re.compile(r"\b\d{9,18}\b")
 EMAIL_RE = re.compile(r"\b[\w.+-]+@[\w-]+\.[\w.-]+\b")
 PHONE_RE = re.compile(r"\b\+?\d{10,15}\b")
 
-BASE_DIR = Path(r"A:\HCL Project")
 MODEL_PATH = BASE_DIR / "models" / "scam_model.joblib"
 ML_THRESHOLD = 0.7
 

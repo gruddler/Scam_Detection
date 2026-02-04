@@ -1,16 +1,12 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
-from pathlib import Path
-
 from .schemas import IngestRequest, IngestResponse, StartSessionResponse
 from .engines import PERSONA, extract_intel, generate_reply, is_scam
 from .storage import add_message, get_conversation, start_session
+from .config import WEB_DIR
 
 app = FastAPI(title="Agentic Honeypot", version="0.2.0")
-
-BASE_DIR = Path(r"A:\HCL Project")
-WEB_DIR = BASE_DIR / "web"
 
 app.mount("/static", StaticFiles(directory=WEB_DIR), name="static")
 
