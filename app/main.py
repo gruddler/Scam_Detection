@@ -1,6 +1,10 @@
-from fastapi import FastAPI, HTTPException
+from typing import Any, Dict, List, Optional
+
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel
+
 from .schemas import IngestRequest, IngestResponse, StartSessionResponse
 from .engines import PERSONA, extract_intel, generate_reply, is_scam
 from .storage import add_message, get_conversation, start_session
@@ -9,6 +13,37 @@ from .config import WEB_DIR
 app = FastAPI(title="Agentic Honeypot", version="0.2.0")
 
 app.mount("/static", StaticFiles(directory=WEB_DIR), name="static")
+
+API_KEY_ENV = "API_KEY"
+
+
+def require_api_key(request: Request) -> None:
+    expected = request.app.state.api_key
+    if not expected:
+        return
+    provided = request.headers.get("x-api-key")
+    if provided != expected:
+        raise HTTPException(status_code=401, detail="Invalid API key")
+
+
+@app.on_event("startup")
+def load_api_key() -> None:
+    import os
+
+    app.state.api_key = os.getenv(API_KEY_ENV, "")
+
+
+class JudgeMessage(BaseModel):
+    sender: str
+    text: str
+    timestamp: Optional[int] = None
+
+
+class JudgeRequest(BaseModel):
+    sessionId: str
+    message: JudgeMessage
+    conversationHistory: List[Dict[str, Any]] = []
+    metadata: Dict[str, Any] = {}
 
 
 @app.get("/")
@@ -57,3 +92,17 @@ def ingest(payload: IngestRequest):
         extracted=extracted,
         conversation=conversation,
     )
+
+
+@app.post("/respond")
+def respond(payload: JudgeRequest, request: Request):
+    require_api_key(request)
+    text = payload.message.text
+    detected, score = is_scam(text)
+    reply = generate_reply(detected, score, payload.conversationHistory)
+    return {"status": "success", "reply": reply}
+
+
+@app.post("/")
+def root_post(payload: JudgeRequest, request: Request):
+    return respond(payload, request)
