@@ -3,7 +3,8 @@ from typing import Any, Dict, List, Optional
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel
+from fastapi.responses import JSONResponse
+from pydantic import BaseModel, Field
 
 from .schemas import IngestRequest, IngestResponse, StartSessionResponse
 from .engines import PERSONA, extract_intel, generate_reply, is_scam
@@ -21,7 +22,16 @@ def require_api_key(request: Request) -> None:
     expected = request.app.state.api_key
     if not expected:
         return
-    provided = request.headers.get("x-api-key")
+    provided = (
+        request.headers.get("x-api-key")
+        or request.headers.get("api-key")
+        or request.query_params.get("api_key")
+        or request.query_params.get("apiKey")
+    )
+    if not provided:
+        auth = request.headers.get("authorization", "")
+        if auth.lower().startswith("bearer "):
+            provided = auth.split(" ", 1)[1].strip()
     if provided != expected:
         raise HTTPException(status_code=401, detail="Invalid API key")
 
@@ -42,8 +52,29 @@ class JudgeMessage(BaseModel):
 class JudgeRequest(BaseModel):
     sessionId: str
     message: JudgeMessage
-    conversationHistory: List[Dict[str, Any]] = []
-    metadata: Dict[str, Any] = {}
+    conversationHistory: List[Dict[str, Any]] = Field(default_factory=list)
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+
+
+class JudgeResponse(BaseModel):
+    status: str
+    reply: str
+
+
+@app.exception_handler(HTTPException)
+async def http_exception_handler(_: Request, exc: HTTPException):
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"status": "error", "reply": str(exc.detail)},
+    )
+
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(_: Request, __: Exception):
+    return JSONResponse(
+        status_code=500,
+        content={"status": "error", "reply": "Internal server error"},
+    )
 
 
 @app.get("/")
@@ -94,7 +125,7 @@ def ingest(payload: IngestRequest):
     )
 
 
-@app.post("/respond")
+@app.post("/respond", response_model=JudgeResponse)
 def respond(payload: JudgeRequest, request: Request):
     require_api_key(request)
     text = payload.message.text
@@ -103,6 +134,6 @@ def respond(payload: JudgeRequest, request: Request):
     return {"status": "success", "reply": reply}
 
 
-@app.post("/")
+@app.post("/", response_model=JudgeResponse)
 def root_post(payload: JudgeRequest, request: Request):
     return respond(payload, request)
